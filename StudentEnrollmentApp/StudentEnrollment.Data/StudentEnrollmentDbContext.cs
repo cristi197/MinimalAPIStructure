@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using StudentEnrollment.Data.Configurations;
 
 namespace StudentEnrollment.Data
 {
@@ -9,8 +10,16 @@ namespace StudentEnrollment.Data
         {
 
         }
-        public DbSet<Course> Courses { get; set; }  
-        public DbSet<Student> Students { get; set; }  
-        public DbSet<Enrollment> Enrollments { get; set; }  
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+            builder.ApplyConfiguration(new CourseConfiguration());
+            builder.ApplyConfiguration(new UserRoleConfiguration());
+        }
+
+        public DbSet<Course> Courses { get; set; }
+        public DbSet<Student> Students { get; set; }
+        public DbSet<Enrollment> Enrollments { get; set; }
     }
 }
