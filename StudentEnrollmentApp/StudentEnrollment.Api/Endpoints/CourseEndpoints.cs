@@ -33,6 +33,17 @@ public static class CourseEndpoints
         .WithName("GetCourseById")
         .WithOpenApi();
 
+        routes.MapGet("/api/Course/GetStudents/{id}", async (int id, ICourseRepository repo, IMapper mapper) =>
+        {
+            return await repo.GetStudentList(id)
+                is Course model
+                    ? Results.Ok(mapper.Map<CourseDetailsDto>(model))
+                    : Results.NotFound();
+        })
+        .WithTags(nameof(Course))
+        .WithName("GetCourseDetailsById")
+        .WithOpenApi();
+
         routes.MapPut("/api/Course/{id}", async (int id, CourseDto courseDto, ICourseRepository repo, IMapper mapper) =>
         {
             var foundModel = await repo.GetAsync(id);
