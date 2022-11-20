@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using StudentEnrollment.Data;
 using StudentEnrollment.Api.Endpoints;
 using StudentEnrollment.Api.Configurations;
+using StudentEnrollment.Data.Repositories;
+using StudentEnrollment.Data.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +17,11 @@ builder.Services.AddDbContext<StudentEnrollmentDbContext>(options =>
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+
 builder.Services.AddAutoMapper(typeof(MapperConfig));
 builder.Services.AddCors(options =>
 {
