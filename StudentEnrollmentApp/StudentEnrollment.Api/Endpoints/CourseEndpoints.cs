@@ -11,45 +11,43 @@ public static class CourseEndpoints
 {
     public static void MapCourseEndpoints(this IEndpointRouteBuilder routes)
     {
-        var group = routes.MapGroup("/api/Course").WithTags(nameof(Course));
-
-        group.MapGet("/", async (StudentEnrollmentDbContext db, IMapper mapper) =>
+        routes.MapGet("/api/Course", async (StudentEnrollmentDbContext db, IMapper mapper) =>
         {
             var courses = await db.Courses.ToListAsync();
-
-            return mapper.Map<List<CourseDto>>(courses);
+            var data = mapper.Map<List<CourseDto>>(courses);
+            return data;
         })
         .WithName("GetAllCourses")
         .WithOpenApi();
 
-        group.MapGet("/{id}", async Task<Results<Ok<Course>, NotFound>> (int id, StudentEnrollmentDbContext db) =>
+        routes.MapGet("/api/Course/{id}", async (int id, StudentEnrollmentDbContext db, IMapper mapper) =>
         {
             return await db.Courses.FindAsync(id)
                 is Course model
-                    ? TypedResults.Ok(model)
-                    : TypedResults.NotFound();
+                    ? Results.Ok(mapper.Map<CourseDto>(model))
+                    : Results.NotFound();
         })
         .WithName("GetCourseById")
         .WithOpenApi();
 
-        group.MapPut("/{id}", async Task<Results<NotFound, NoContent>> (int id, CourseDto course, StudentEnrollmentDbContext db) =>
+        routes.MapPut("/api/Course/{id}", async (int id, CourseDto courseDto, StudentEnrollmentDbContext db, IMapper mapper) =>
         {
             var foundModel = await db.Courses.FindAsync(id);
 
             if (foundModel is null)
             {
-                return TypedResults.NotFound();
+                return Results.NotFound();
             }
 
-            db.Update(course);
+            mapper.Map(courseDto, foundModel);
             await db.SaveChangesAsync();
 
-            return TypedResults.NoContent();
+            return Results.NoContent();
         })
         .WithName("UpdateCourse")
         .WithOpenApi();
 
-        group.MapPost("/", async (CreateCourseDto courseDto, StudentEnrollmentDbContext db, IMapper mapper) =>
+        routes.MapPost("/api/Course", async (CreateCourseDto courseDto, StudentEnrollmentDbContext db, IMapper mapper) =>
         {
             var course = mapper.Map<Course>(courseDto);
             db.Courses.Add(course);
@@ -59,7 +57,7 @@ public static class CourseEndpoints
         .WithName("CreateCourse")
         .WithOpenApi();
 
-        group.MapDelete("/{id}", async Task<Results<Ok<Course>, NotFound>> (int id, StudentEnrollmentDbContext db) =>
+        routes.MapDelete("/api/Course/{id}", async Task<Results<Ok<Course>, NotFound>> (int id, StudentEnrollmentDbContext db) =>
         {
             if (await db.Courses.FindAsync(id) is Course course)
             {
