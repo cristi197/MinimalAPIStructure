@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.OpenApi;
 using StudentEnrollment.Data;
 using StudentEnrollment.Api.DTOs.Course;
 using AutoMapper;
+using StudentEnrollment.Data.Contracts;
 
 namespace StudentEnrollment.Api.Endpoints;
 
@@ -11,28 +12,30 @@ public static class CourseEndpoints
 {
     public static void MapCourseEndpoints(this IEndpointRouteBuilder routes)
     {
-        routes.MapGet("/api/Course", async (StudentEnrollmentDbContext db, IMapper mapper) =>
+        routes.MapGet("/api/Course", async (ICourseRepository repo, IMapper mapper) =>
         {
-            var courses = await db.Courses.ToListAsync();
+            var courses = await repo.GetAllAsync();
             var data = mapper.Map<List<CourseDto>>(courses);
             return data;
         })
+        .WithTags(nameof(Course))
         .WithName("GetAllCourses")
         .WithOpenApi();
 
-        routes.MapGet("/api/Course/{id}", async (int id, StudentEnrollmentDbContext db, IMapper mapper) =>
+        routes.MapGet("/api/Course/{id}", async (int id, ICourseRepository repo, IMapper mapper) =>
         {
-            return await db.Courses.FindAsync(id)
+            return await repo.GetAsync(id)
                 is Course model
                     ? Results.Ok(mapper.Map<CourseDto>(model))
                     : Results.NotFound();
         })
+        .WithTags(nameof(Course))
         .WithName("GetCourseById")
         .WithOpenApi();
 
-        routes.MapPut("/api/Course/{id}", async (int id, CourseDto courseDto, StudentEnrollmentDbContext db, IMapper mapper) =>
+        routes.MapPut("/api/Course/{id}", async (int id, CourseDto courseDto, ICourseRepository repo, IMapper mapper) =>
         {
-            var foundModel = await db.Courses.FindAsync(id);
+            var foundModel = await repo.GetAsync(id);
 
             if (foundModel is null)
             {
@@ -40,34 +43,29 @@ public static class CourseEndpoints
             }
 
             mapper.Map(courseDto, foundModel);
-            await db.SaveChangesAsync();
+            await repo.UpdateAsync(foundModel);
 
             return Results.NoContent();
         })
+        .WithTags(nameof(Course))
         .WithName("UpdateCourse")
         .WithOpenApi();
 
-        routes.MapPost("/api/Course", async (CreateCourseDto courseDto, StudentEnrollmentDbContext db, IMapper mapper) =>
+        routes.MapPost("/api/Course", async (CreateCourseDto courseDto, ICourseRepository repo, IMapper mapper) =>
         {
             var course = mapper.Map<Course>(courseDto);
-            db.Courses.Add(course);
-            await db.SaveChangesAsync();
-            return TypedResults.Created($"/api/Course/{course.Id}", course);
+            await repo.AddAsync(course);
+            return Results.Created($"/api/Course/{course.Id}", course);
         })
+        .WithTags(nameof(Course))
         .WithName("CreateCourse")
         .WithOpenApi();
 
-        routes.MapDelete("/api/Course/{id}", async Task<Results<Ok<Course>, NotFound>> (int id, StudentEnrollmentDbContext db) =>
+        routes.MapDelete("/api/Course/{id}", async (int id, ICourseRepository repo) =>
         {
-            if (await db.Courses.FindAsync(id) is Course course)
-            {
-                db.Courses.Remove(course);
-                await db.SaveChangesAsync();
-                return TypedResults.Ok(course);
-            }
-
-            return TypedResults.NotFound();
+            return await repo.DeleteAsync(id) ? Results.NoContent() : Results.NotFound();
         })
+        .WithTags(nameof(Course))
         .WithName("DeleteCourse")
         .WithOpenApi();
     }

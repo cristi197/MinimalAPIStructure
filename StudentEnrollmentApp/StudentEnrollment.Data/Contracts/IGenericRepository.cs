@@ -11,7 +11,7 @@ namespace StudentEnrollment.Data.Contracts
         Task<TEntity> GetAsync(int? id);
         Task<List<TEntity>> GetAllAsync();
         Task<TEntity> AddAsync(TEntity entity);
-        Task DeleteAsync(int id);
+        Task<bool> DeleteAsync(int id);
         Task UpdateAsync(TEntity entity);
         Task<bool> Exists(int id);
     }
