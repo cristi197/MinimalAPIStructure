@@ -5,6 +5,7 @@ using StudentEnrollment.Api.Endpoints;
 using StudentEnrollment.Api.Configurations;
 using StudentEnrollment.Data.Repositories;
 using StudentEnrollment.Data.Contracts;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,11 @@ builder.Services.AddDbContext<StudentEnrollmentDbContext>(options =>
 {
     options.UseSqlServer(connection);
 });
+
+builder.Services.AddIdentityCore<SchoolUser>()
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<StudentEnrollmentDbContext>();
+
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
