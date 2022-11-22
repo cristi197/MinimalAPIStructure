@@ -6,6 +6,10 @@ using StudentEnrollment.Api.Configurations;
 using StudentEnrollment.Data.Repositories;
 using StudentEnrollment.Data.Contracts;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using StudentEnrollment.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +23,24 @@ builder.Services.AddIdentityCore<SchoolUser>()
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<StudentEnrollmentDbContext>();
 
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["JwtSettings:Audience"],
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"]))
+    };
+});
+
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -27,6 +49,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+builder.Services.AddScoped<IAuthManager, AuthManager>();
 
 builder.Services.AddAutoMapper(typeof(MapperConfig));
 builder.Services.AddCors(options =>
@@ -52,5 +75,7 @@ app.MapStudentEndpoints();
 app.MapEnrollmentEndpoints();
 
 app.MapCourseEndpoints();
+
+app.MapAuthenticationEndpoints();
 
 app.Run();
