@@ -5,6 +5,7 @@ using StudentEnrollment.Data;
 using AutoMapper;
 using StudentEnrollment.Api.DTOs.Student;
 using StudentEnrollment.Data.Contracts;
+using Microsoft.AspNetCore.Authorization;
 
 namespace StudentEnrollment.Api.Endpoints;
 
@@ -18,6 +19,7 @@ public static class StudentEndpoints
             var data = mapper.Map<List<StudentDto>>(students);
             return data;
         })
+        .AllowAnonymous()
         .WithTags(nameof(Student))
         .WithName("GetAllStudents")
         .WithOpenApi();
@@ -29,6 +31,7 @@ public static class StudentEndpoints
                     ? Results.Ok(mapper.Map<Student>(model))
                     : Results.NotFound();
         })
+        .AllowAnonymous()
         .WithTags(nameof(Student))
         .WithName("GetStudentById")
         .WithOpenApi();
@@ -44,7 +47,7 @@ public static class StudentEndpoints
         .WithName("GetStudentDetailsById")
         .WithOpenApi();
 
-        routes.MapPut("/api/Student/{id}", async (int id, StudentDto studentDto, IStudentRepository repo, IMapper mapper) =>
+        routes.MapPut("/api/Student/{id}",[Authorize(Roles ="Administrator")] async (int id, StudentDto studentDto, IStudentRepository repo, IMapper mapper) =>
         {
             var foundModel = await repo.GetAsync(id);
 
@@ -72,7 +75,7 @@ public static class StudentEndpoints
         .WithName("CreateStudent")
         .WithOpenApi();
 
-        routes.MapDelete("/api/Student/{id}", async (int id, IStudentRepository repo) =>
+        routes.MapDelete("/api/Student/{id}", [Authorize(Roles = "Administrator")] async (int id, IStudentRepository repo) =>
         {
             return await repo.DeleteAsync(id) ? Results.NoContent() : Results.NotFound();
         })

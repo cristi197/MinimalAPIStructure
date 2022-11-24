@@ -5,6 +5,7 @@ using StudentEnrollment.Data;
 using StudentEnrollment.Api.DTOs.Course;
 using AutoMapper;
 using StudentEnrollment.Data.Contracts;
+using Microsoft.AspNetCore.Authorization;
 
 namespace StudentEnrollment.Api.Endpoints;
 
@@ -12,7 +13,7 @@ public static class CourseEndpoints
 {
     public static void MapCourseEndpoints(this IEndpointRouteBuilder routes)
     {
-        routes.MapGet("/api/Course", async (ICourseRepository repo, IMapper mapper) =>
+        routes.MapGet("/api/Course/",[AllowAnonymous] async (ICourseRepository repo, IMapper mapper) =>
         {
             var courses = await repo.GetAllAsync();
             var data = mapper.Map<List<CourseDto>>(courses);
@@ -29,6 +30,7 @@ public static class CourseEndpoints
                     ? Results.Ok(mapper.Map<CourseDto>(model))
                     : Results.NotFound();
         })
+        .AllowAnonymous()
         .WithTags(nameof(Course))
         .WithName("GetCourseById")
         .WithOpenApi();
@@ -44,7 +46,7 @@ public static class CourseEndpoints
         .WithName("GetCourseDetailsById")
         .WithOpenApi();
 
-        routes.MapPut("/api/Course/{id}", async (int id, CourseDto courseDto, ICourseRepository repo, IMapper mapper) =>
+        routes.MapPut("/api/Course/{id}", [Authorize(Roles = "Administrator")] async (int id, CourseDto courseDto, ICourseRepository repo, IMapper mapper) =>
         {
             var foundModel = await repo.GetAsync(id);
 
@@ -62,7 +64,7 @@ public static class CourseEndpoints
         .WithName("UpdateCourse")
         .WithOpenApi();
 
-        routes.MapPost("/api/Course", async (CreateCourseDto courseDto, ICourseRepository repo, IMapper mapper) =>
+        routes.MapPost("/api/Course/", async (CreateCourseDto courseDto, ICourseRepository repo, IMapper mapper) =>
         {
             var course = mapper.Map<Course>(courseDto);
             await repo.AddAsync(course);
@@ -72,7 +74,7 @@ public static class CourseEndpoints
         .WithName("CreateCourse")
         .WithOpenApi();
 
-        routes.MapDelete("/api/Course/{id}", async (int id, ICourseRepository repo) =>
+        routes.MapDelete("/api/Course/{id}",[Authorize(Roles = "Administrator")] async (int id, ICourseRepository repo) =>
         {
             return await repo.DeleteAsync(id) ? Results.NoContent() : Results.NotFound();
         })

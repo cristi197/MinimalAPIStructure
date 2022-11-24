@@ -26,6 +26,7 @@ namespace StudentEnrollment.Api.Endpoints
                 return Results.Ok(response);
 
             })
+            .AllowAnonymous()
             .WithTags("Authentication")
             .WithName("Login")
             .WithOpenApi();
@@ -52,6 +53,7 @@ namespace StudentEnrollment.Api.Endpoints
 
                 return Results.BadRequest(errors);
             })
+            .AllowAnonymous()
             .WithTags("Authentication")
             .WithName("Register")
             .WithOpenApi();
