@@ -7,6 +7,8 @@ using StudentEnrollment.Api.DTOs.Authentication;
 using StudentEnrollment.Api.Services;
 using StudentEnrollment.Api.DTOs;
 using FluentValidation;
+using System.ComponentModel.DataAnnotations;
+using StudentEnrollment.Api.Filters;
 
 namespace StudentEnrollment.Api.Endpoints
 {
@@ -16,14 +18,6 @@ namespace StudentEnrollment.Api.Endpoints
         {
             routes.MapPost("/api/login/", async (LoginDto loginDto, IAuthManager authManager, IValidator<LoginDto> validator) =>
             {
-                var validationResult = await validator.ValidateAsync(loginDto);
-
-                var errors = new List<ErrorResponseDto>();
-                if (!validationResult.IsValid)
-                {
-                    return Results.BadRequest(validationResult.ToDictionary());
-                }
-
                 //Generate token here....
                 var response = await authManager.Login(loginDto);
 
@@ -35,6 +29,7 @@ namespace StudentEnrollment.Api.Endpoints
                 return Results.Ok(response);
 
             })
+            .AddEndpointFilter<ValidationFilter<LoginDto>>()
             .AllowAnonymous()
             .WithTags("Authentication")
             .WithName("Login")
@@ -42,14 +37,6 @@ namespace StudentEnrollment.Api.Endpoints
 
             routes.MapPost("/api/register/", async (RegisterDto registerDto, IAuthManager authManager, IValidator<RegisterDto> validator) =>
             {
-
-                var validationResult = await validator.ValidateAsync(registerDto);
-
-                if (!validationResult.IsValid)
-                {
-                    return Results.BadRequest(validationResult.ToDictionary());
-                }
-
                 var response = await authManager.Register(registerDto);
 
                 if (!response.Any())
@@ -70,6 +57,7 @@ namespace StudentEnrollment.Api.Endpoints
 
                 return Results.BadRequest(errors);
             })
+            .AddEndpointFilter<ValidationFilter<RegisterDto>>()
             .AllowAnonymous()
             .WithTags("Authentication")
             .WithName("Register")

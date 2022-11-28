@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Authorization;
 using FluentValidation;
 using StudentEnrollment.Api.DTOs.Enrollment;
 using System.ComponentModel.DataAnnotations;
+using StudentEnrollment.Api.Services;
+using StudentEnrollment.Api.Filters;
 
 namespace StudentEnrollment.Api.Endpoints;
 
@@ -50,7 +52,7 @@ public static class StudentEndpoints
         .WithName("GetStudentDetailsById")
         .WithOpenApi();
 
-        routes.MapPut("/api/Student/{id}",[Authorize(Roles ="Administrator")] async (int id, StudentDto studentDto, IStudentRepository repo, IMapper mapper, IValidator<StudentDto> validator) =>
+        routes.MapPut("/api/Student/{id}",[Authorize(Roles ="Administrator")] async (int id, StudentDto studentDto, IStudentRepository repo, IMapper mapper, IValidator<StudentDto> validator, IFileUpload fileUpload) =>
         {
             var validationResult = await validator.ValidateAsync(studentDto);
 
@@ -67,6 +69,12 @@ public static class StudentEndpoints
             }
 
             mapper.Map(studentDto, foundModel);
+
+            if(studentDto.ProfilePicture != null)
+            {
+                foundModel.Picture = fileUpload.UploadStudentFile(studentDto.ProfilePicture, studentDto.OriginalFileName);
+            }
+
             await repo.UpdateAsync(foundModel);
 
             return Results.NoContent();
@@ -75,7 +83,7 @@ public static class StudentEndpoints
         .WithName("UpdateStudent")
         .WithOpenApi();
 
-        routes.MapPost("/api/Student", async (CreateStudentDto studentDto, IStudentRepository repo, IMapper mapper, IValidator<CreateStudentDto> validator) =>
+        routes.MapPost("/api/Student", async (CreateStudentDto studentDto, IStudentRepository repo, IMapper mapper, IValidator<CreateStudentDto> validator, IFileUpload fileUpload) =>
         {
             var validationResult = await validator.ValidateAsync(studentDto);
 
@@ -85,9 +93,14 @@ public static class StudentEndpoints
             }
 
             var student = mapper.Map<Student>(studentDto);
+
+            student.Picture = fileUpload.UploadStudentFile(studentDto.ProfilePicture, studentDto.OriginalFileName);
+
             await repo.AddAsync(student);
             return Results.Created($"/api/Student/{student.Id}", student);
         })
+        .AddEndpointFilter<ValidationFilter<CreateStudentDto>>()
+        .AddEndpointFilter<LoggingFilter>()
         .WithTags(nameof(Student))
         .WithName("CreateStudent")
         .WithOpenApi();
