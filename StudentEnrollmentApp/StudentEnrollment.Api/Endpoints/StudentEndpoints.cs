@@ -6,6 +6,9 @@ using AutoMapper;
 using StudentEnrollment.Api.DTOs.Student;
 using StudentEnrollment.Data.Contracts;
 using Microsoft.AspNetCore.Authorization;
+using FluentValidation;
+using StudentEnrollment.Api.DTOs.Enrollment;
+using System.ComponentModel.DataAnnotations;
 
 namespace StudentEnrollment.Api.Endpoints;
 
@@ -47,8 +50,15 @@ public static class StudentEndpoints
         .WithName("GetStudentDetailsById")
         .WithOpenApi();
 
-        routes.MapPut("/api/Student/{id}",[Authorize(Roles ="Administrator")] async (int id, StudentDto studentDto, IStudentRepository repo, IMapper mapper) =>
+        routes.MapPut("/api/Student/{id}",[Authorize(Roles ="Administrator")] async (int id, StudentDto studentDto, IStudentRepository repo, IMapper mapper, IValidator<StudentDto> validator) =>
         {
+            var validationResult = await validator.ValidateAsync(studentDto);
+
+            if (!validationResult.IsValid)
+            {
+                return Results.BadRequest(validationResult.ToDictionary());
+            }
+
             var foundModel = await repo.GetAsync(id);
 
             if (foundModel is null)
@@ -65,8 +75,15 @@ public static class StudentEndpoints
         .WithName("UpdateStudent")
         .WithOpenApi();
 
-        routes.MapPost("/api/Student", async (CreateStudentDto studentDto, IStudentRepository repo, IMapper mapper) =>
+        routes.MapPost("/api/Student", async (CreateStudentDto studentDto, IStudentRepository repo, IMapper mapper, IValidator<CreateStudentDto> validator) =>
         {
+            var validationResult = await validator.ValidateAsync(studentDto);
+
+            if (!validationResult.IsValid)
+            {
+                return Results.BadRequest(validationResult.ToDictionary());
+            }
+
             var student = mapper.Map<Student>(studentDto);
             await repo.AddAsync(student);
             return Results.Created($"/api/Student/{student.Id}", student);

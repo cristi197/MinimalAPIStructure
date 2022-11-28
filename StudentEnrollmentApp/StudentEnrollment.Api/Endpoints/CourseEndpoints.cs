@@ -6,6 +6,9 @@ using StudentEnrollment.Api.DTOs.Course;
 using AutoMapper;
 using StudentEnrollment.Data.Contracts;
 using Microsoft.AspNetCore.Authorization;
+using FluentValidation;
+using StudentEnrollment.Api.DTOs.Authentication;
+using Azure;
 
 namespace StudentEnrollment.Api.Endpoints;
 
@@ -46,8 +49,15 @@ public static class CourseEndpoints
         .WithName("GetCourseDetailsById")
         .WithOpenApi();
 
-        routes.MapPut("/api/Course/{id}", [Authorize(Roles = "Administrator")] async (int id, CourseDto courseDto, ICourseRepository repo, IMapper mapper) =>
+        routes.MapPut("/api/Course/{id}", [Authorize(Roles = "Administrator")] async (int id, CourseDto courseDto, ICourseRepository repo, IMapper mapper, IValidator<CourseDto> validator) =>
         {
+            var validationResult = await validator.ValidateAsync(courseDto);
+
+            if (!validationResult.IsValid)
+            {
+                return Results.BadRequest(validationResult.ToDictionary());
+            }
+
             var foundModel = await repo.GetAsync(id);
 
             if (foundModel is null)
@@ -64,8 +74,15 @@ public static class CourseEndpoints
         .WithName("UpdateCourse")
         .WithOpenApi();
 
-        routes.MapPost("/api/Course/", async (CreateCourseDto courseDto, ICourseRepository repo, IMapper mapper) =>
+        routes.MapPost("/api/Course/", async (CreateCourseDto courseDto, ICourseRepository repo, IMapper mapper, IValidator<CreateCourseDto> validator) =>
         {
+            var validationResult = await validator.ValidateAsync(courseDto);
+
+            if (!validationResult.IsValid)
+            {
+                return Results.BadRequest(validationResult.ToDictionary());
+            }
+
             var course = mapper.Map<Course>(courseDto);
             await repo.AddAsync(course);
             return Results.Created($"/api/Course/{course.Id}", course);

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using StudentEnrollment.Api.DTOs.Authentication;
 using StudentEnrollment.Api.Services;
 using StudentEnrollment.Api.DTOs;
+using FluentValidation;
 
 namespace StudentEnrollment.Api.Endpoints
 {
@@ -13,8 +14,16 @@ namespace StudentEnrollment.Api.Endpoints
     {
         public static void MapAuthenticationEndpoints(this IEndpointRouteBuilder routes)
         {
-            routes.MapPost("/api/login/", async (LoginDto loginDto, IAuthManager authManager) =>
+            routes.MapPost("/api/login/", async (LoginDto loginDto, IAuthManager authManager, IValidator<LoginDto> validator) =>
             {
+                var validationResult = await validator.ValidateAsync(loginDto);
+
+                var errors = new List<ErrorResponseDto>();
+                if (!validationResult.IsValid)
+                {
+                    return Results.BadRequest(validationResult.ToDictionary());
+                }
+
                 //Generate token here....
                 var response = await authManager.Login(loginDto);
 
@@ -31,8 +40,16 @@ namespace StudentEnrollment.Api.Endpoints
             .WithName("Login")
             .WithOpenApi();
 
-            routes.MapPost("/api/register/", async (RegisterDto registerDto, IAuthManager authManager) =>
+            routes.MapPost("/api/register/", async (RegisterDto registerDto, IAuthManager authManager, IValidator<RegisterDto> validator) =>
             {
+
+                var validationResult = await validator.ValidateAsync(registerDto);
+
+                if (!validationResult.IsValid)
+                {
+                    return Results.BadRequest(validationResult.ToDictionary());
+                }
+
                 var response = await authManager.Register(registerDto);
 
                 if (!response.Any())
